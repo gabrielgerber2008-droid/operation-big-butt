@@ -1,19 +1,23 @@
 import { useState } from 'react'
-import type { WorkoutSession, WorkoutType } from '../types'
-import { WORKOUT_TYPES } from '../types'
+import type { WorkoutSession, WorkoutTemplate } from '../types'
 import { SessionCard } from '../components/SessionCard'
-import { WORKOUT_META } from '../data/workouts'
 
 interface Props {
   sessions: WorkoutSession[]
   onDelete: (id: string) => void
+  allTemplates: WorkoutTemplate[]
 }
 
-export const HistoryPage = ({ sessions, onDelete }: Props) => {
-  const [filter, setFilter] = useState<WorkoutType | 'All'>('All')
+export const HistoryPage = ({ sessions, onDelete, allTemplates }: Props) => {
+  const [filter, setFilter] = useState<string>('All')
+
+  // Build unique workout names that actually appear in sessions
+  const workoutNames = [...new Set(sessions.map((s) => s.type))]
 
   const filtered =
     filter === 'All' ? sessions : sessions.filter((s) => s.type === filter)
+
+  const getTemplate = (name: string) => allTemplates.find((t) => t.name === name)
 
   return (
     <div className="max-w-lg mx-auto px-4 pb-16">
@@ -30,16 +34,17 @@ export const HistoryPage = ({ sessions, onDelete }: Props) => {
       {sessions.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-4 mb-4 -mx-4 px-4 scrollbar-none">
           <FilterChip label="All" active={filter === 'All'} onClick={() => setFilter('All')} />
-          {WORKOUT_TYPES.map((type) => {
-            const count = sessions.filter((s) => s.type === type).length
-            if (count === 0) return null
+          {workoutNames.map((name) => {
+            const count = sessions.filter((s) => s.type === name).length
+            const t = getTemplate(name)
             return (
               <FilterChip
-                key={type}
-                label={`${WORKOUT_META[type].icon} ${type}`}
-                active={filter === type}
-                onClick={() => setFilter(type)}
+                key={name}
+                label={`${t?.icon ?? '💪'} ${name}`}
+                active={filter === name}
+                onClick={() => setFilter(name)}
                 count={count}
+                color={t?.color}
               />
             )
           })}
@@ -56,7 +61,12 @@ export const HistoryPage = ({ sessions, onDelete }: Props) => {
       ) : (
         <div className="space-y-3">
           {filtered.map((session) => (
-            <SessionCard key={session.id} session={session} onDelete={onDelete} />
+            <SessionCard
+              key={session.id}
+              session={session}
+              onDelete={onDelete}
+              allTemplates={allTemplates}
+            />
           ))}
         </div>
       )}
@@ -69,11 +79,13 @@ const FilterChip = ({
   active,
   onClick,
   count,
+  color,
 }: {
   label: string
   active: boolean
   onClick: () => void
   count?: number
+  color?: string
 }) => (
   <button
     type="button"
@@ -83,10 +95,11 @@ const FilterChip = ({
         ? 'border-gold/50 bg-gold/10 text-gold'
         : 'border-obs-4 bg-obs-2 text-white/40 hover:text-white hover:border-obs-5'
     }`}
+    style={active && color ? { borderColor: `${color}50`, backgroundColor: `${color}15`, color } : undefined}
   >
     {label}
     {count != null && (
-      <span className={`text-[10px] font-bold ${active ? 'text-gold/70' : 'text-white/25'}`}>
+      <span className={`text-[10px] font-bold ${active ? 'opacity-70' : 'text-white/25'}`}>
         {count}
       </span>
     )}

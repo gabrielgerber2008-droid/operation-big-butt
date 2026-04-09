@@ -1,35 +1,54 @@
-export type WorkoutType =
-  | 'Glute Day 1'
-  | 'Glute Day 2'
-  | 'Upper'
-  | 'Softball Practice'
-  | 'Softball Game';
+export type WorkoutCategory =
+  | 'glutes'
+  | 'upper'
+  | 'legs'
+  | 'softball'
+  | 'cardio'
+  | 'full_body'
+  | 'other'
 
-export type WorkoutCategory = 'gym' | 'softball';
+export const WORKOUT_CATEGORIES: WorkoutCategory[] = [
+  'glutes', 'upper', 'legs', 'softball', 'cardio', 'full_body', 'other',
+]
 
-export const WORKOUT_TYPES: WorkoutType[] = [
-  'Glute Day 1',
-  'Glute Day 2',
-  'Upper',
-  'Softball Practice',
-  'Softball Game',
-];
+export const CATEGORY_COLORS: Record<WorkoutCategory, string> = {
+  glutes: '#f472b6',
+  upper: '#60a5fa',
+  legs: '#fb923c',
+  softball: '#4ade80',
+  cardio: '#facc15',
+  full_body: '#c084fc',
+  other: '#94a3b8',
+}
 
-export const TYPE_TO_SLUG: Record<WorkoutType, string> = {
-  'Glute Day 1': 'glute-day-1',
-  'Glute Day 2': 'glute-day-2',
-  Upper: 'upper',
-  'Softball Practice': 'softball-practice',
-  'Softball Game': 'softball-game',
-};
+export const CATEGORY_LABELS: Record<WorkoutCategory, string> = {
+  glutes: 'Glutes',
+  upper: 'Upper Body',
+  legs: 'Legs',
+  softball: 'Softball',
+  cardio: 'Cardio',
+  full_body: 'Full Body',
+  other: 'Other',
+}
 
-export const SLUG_TO_TYPE: Record<string, WorkoutType> = {
-  'glute-day-1': 'Glute Day 1',
-  'glute-day-2': 'Glute Day 2',
-  upper: 'Upper',
-  'softball-practice': 'Softball Practice',
-  'softball-game': 'Softball Game',
-};
+export interface ExerciseTemplate {
+  name: string
+  setsTarget?: number
+  repsTarget?: string
+  weightTarget?: string
+  durationTarget?: string
+}
+
+export interface WorkoutTemplate {
+  id: string
+  name: string
+  category: WorkoutCategory
+  color: string
+  icon: string
+  description: string
+  isCustom: boolean
+  exercises: ExerciseTemplate[]
+}
 
 export interface ExerciseLog {
   id: string;
@@ -39,7 +58,6 @@ export interface ExerciseLog {
   weightTarget?: string;
   durationTarget?: string;
   completed: boolean;
-  /** User-entered value for weight, reps, or duration actually used */
   actualValue?: string;
 }
 
@@ -58,7 +76,8 @@ export interface WorkoutSession {
   id: string;
   /** ISO date string YYYY-MM-DD */
   date: string;
-  type: WorkoutType;
+  /** Workout name (display label) */
+  type: string;
   exercises: ExerciseLog[];
   notes: string;
   completed: boolean;

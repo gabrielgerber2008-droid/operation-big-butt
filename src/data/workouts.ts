@@ -1,12 +1,5 @@
-import type { WorkoutType, ExerciseLog, WorkoutCategory } from '../types'
-
-interface ExerciseTemplate {
-  name: string
-  setsTarget?: number
-  repsTarget?: string
-  weightTarget?: string
-  durationTarget?: string
-}
+import type { WorkoutTemplate, ExerciseTemplate, ExerciseLog, WorkoutCategory } from '../types'
+import { CATEGORY_COLORS } from '../types'
 
 const toLog = (t: ExerciseTemplate, i: number): ExerciseLog => ({
   id: String(i),
@@ -46,47 +39,85 @@ const UPPER: ExerciseTemplate[] = [
   { name: 'Bicep Curls', setsTarget: 3, repsTarget: '10-12' },
 ]
 
-const EXERCISE_MAP: Partial<Record<WorkoutType, ExerciseTemplate[]>> = {
-  'Glute Day 1': GLUTE_1,
-  'Glute Day 2': GLUTE_2,
-  Upper: UPPER,
-}
-
-export const getDefaultExercises = (type: WorkoutType): ExerciseLog[] =>
-  (EXERCISE_MAP[type] ?? []).map(toLog)
-
-export const WORKOUT_META: Record<
-  WorkoutType,
-  { icon: string; description: string; category: WorkoutCategory; color: string }
-> = {
-  'Glute Day 1': {
+export const BUILT_IN_TEMPLATES: WorkoutTemplate[] = [
+  {
+    id: 'glute-day-1',
+    name: 'Glute Day 1',
+    category: 'glutes',
+    color: CATEGORY_COLORS.glutes,
     icon: '🍑',
     description: 'Bridges · Lunges · Thrusts · StairMaster',
-    category: 'gym',
-    color: 'from-gold/20 to-transparent',
+    isCustom: false,
+    exercises: GLUTE_1,
   },
-  'Glute Day 2': {
+  {
+    id: 'glute-day-2',
+    name: 'Glute Day 2',
+    category: 'glutes',
+    color: CATEGORY_COLORS.glutes,
     icon: '🍑',
     description: 'Splits · Squats · Abduction · StairMaster',
-    category: 'gym',
-    color: 'from-gold/20 to-transparent',
+    isCustom: false,
+    exercises: GLUTE_2,
   },
-  Upper: {
+  {
+    id: 'upper',
+    name: 'Upper',
+    category: 'upper',
+    color: CATEGORY_COLORS.upper,
     icon: '💪',
     description: 'Press · Rows · Shoulders · Curls',
-    category: 'gym',
-    color: 'from-gold/10 to-transparent',
+    isCustom: false,
+    exercises: UPPER,
   },
-  'Softball Practice': {
+  {
+    id: 'softball-practice',
+    name: 'Softball Practice',
+    category: 'softball',
+    color: CATEGORY_COLORS.softball,
     icon: '⚾',
     description: 'Log your practice session',
-    category: 'softball',
-    color: 'from-white/10 to-transparent',
+    isCustom: false,
+    exercises: [],
   },
-  'Softball Game': {
+  {
+    id: 'softball-game',
+    name: 'Softball Game',
+    category: 'softball',
+    color: CATEGORY_COLORS.softball,
     icon: '🏆',
     description: 'Log your game performance',
-    category: 'softball',
-    color: 'from-white/10 to-transparent',
+    isCustom: false,
+    exercises: [],
   },
+]
+
+export const getTemplateById = (
+  id: string,
+  allTemplates: WorkoutTemplate[],
+): WorkoutTemplate | undefined => allTemplates.find((t) => t.id === id)
+
+export const getTemplateByName = (
+  name: string,
+  allTemplates: WorkoutTemplate[],
+): WorkoutTemplate | undefined => allTemplates.find((t) => t.name === name)
+
+export const getDefaultExercises = (
+  templateId: string,
+  allTemplates: WorkoutTemplate[],
+): ExerciseLog[] => {
+  const template = getTemplateById(templateId, allTemplates)
+  return (template?.exercises ?? []).map(toLog)
+}
+
+/** Group templates by category, preserving display order */
+export const groupTemplatesByCategory = (
+  templates: WorkoutTemplate[],
+): Array<{ category: WorkoutCategory; templates: WorkoutTemplate[] }> => {
+  const map = new Map<WorkoutCategory, WorkoutTemplate[]>()
+  for (const t of templates) {
+    if (!map.has(t.category)) map.set(t.category, [])
+    map.get(t.category)!.push(t)
+  }
+  return Array.from(map.entries()).map(([category, templates]) => ({ category, templates }))
 }

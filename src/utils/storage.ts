@@ -1,10 +1,13 @@
-import type { WorkoutSession } from '../types'
+import type { WorkoutSession, WorkoutTemplate } from '../types'
 
-const KEY = 'obb_sessions'
+const SESSIONS_KEY = 'obb_sessions'
+const TEMPLATES_KEY = 'obb_custom_templates'
+
+// ─── Sessions ───────────────────────────────────────────────────────────────
 
 export const loadSessions = (): WorkoutSession[] => {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(SESSIONS_KEY)
     if (!raw) return []
     return JSON.parse(raw) as WorkoutSession[]
   } catch {
@@ -13,7 +16,7 @@ export const loadSessions = (): WorkoutSession[] => {
 }
 
 export const saveSessions = (sessions: WorkoutSession[]): void => {
-  localStorage.setItem(KEY, JSON.stringify(sessions))
+  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
 }
 
 export const addSession = (session: WorkoutSession): void => {
@@ -30,6 +33,39 @@ export const deleteSession = (id: string): void => {
   const sessions = loadSessions()
   saveSessions(sessions.filter((s) => s.id !== id))
 }
+
+// ─── Custom Templates ────────────────────────────────────────────────────────
+
+export const loadCustomTemplates = (): WorkoutTemplate[] => {
+  try {
+    const raw = localStorage.getItem(TEMPLATES_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as WorkoutTemplate[]
+  } catch {
+    return []
+  }
+}
+
+export const saveCustomTemplates = (templates: WorkoutTemplate[]): void => {
+  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates))
+}
+
+export const addCustomTemplate = (template: WorkoutTemplate): void => {
+  const templates = loadCustomTemplates()
+  saveCustomTemplates([...templates, template])
+}
+
+export const updateCustomTemplate = (updated: WorkoutTemplate): void => {
+  const templates = loadCustomTemplates()
+  saveCustomTemplates(templates.map((t) => (t.id === updated.id ? updated : t)))
+}
+
+export const deleteCustomTemplate = (id: string): void => {
+  const templates = loadCustomTemplates()
+  saveCustomTemplates(templates.filter((t) => t.id !== id))
+}
+
+// ─── Date helpers ────────────────────────────────────────────────────────────
 
 export const todayISO = (): string => new Date().toISOString().slice(0, 10)
 
@@ -53,7 +89,7 @@ export const shortDate = (iso: string): string => {
 /** Returns how many sessions fall within the current Mon–Sun week */
 export const thisWeekCount = (sessions: WorkoutSession[]): number => {
   const now = new Date()
-  const day = now.getDay() // 0=Sun..6=Sat
+  const day = now.getDay()
   const monday = new Date(now)
   monday.setDate(now.getDate() - ((day + 6) % 7))
   monday.setHours(0, 0, 0, 0)
@@ -81,7 +117,6 @@ export const calcStreak = (sessions: WorkoutSession[]): number => {
   yesterday.setDate(yesterday.getDate() - 1)
   const yesterdayISO = yesterday.toISOString().slice(0, 10)
 
-  // Streak must include today or yesterday to be active
   if (uniqueDays[0] !== today && uniqueDays[0] !== yesterdayISO) return 0
 
   let streak = 1

@@ -15,7 +15,9 @@ export const Header = () => {
 
         <nav className="flex items-center gap-1">
           <NavLink to="/" label="Home" active={pathname === '/'} />
+          <NavLink to="/calendar" label="Calendar" active={pathname === '/calendar'} />
           <NavLink to="/history" label="History" active={pathname === '/history'} />
+          <NavLink to="/workouts" label="Workouts" active={pathname === '/workouts'} />
         </nav>
       </div>
     </header>
@@ -33,7 +35,7 @@ const NavLink = ({
 }) => (
   <Link
     to={to}
-    className={`text-xs font-semibold tracking-wide px-3 py-1.5 rounded-lg transition-colors ${
+    className={`text-xs font-semibold tracking-wide px-2.5 py-1.5 rounded-lg transition-colors ${
       active ? 'text-gold bg-gold/10' : 'text-white/50 hover:text-white'
     }`}
   >

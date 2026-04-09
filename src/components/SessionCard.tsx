@@ -1,18 +1,21 @@
 import { useState } from 'react'
-import type { WorkoutSession } from '../types'
-import { WORKOUT_META } from '../data/workouts'
+import type { WorkoutSession, WorkoutTemplate } from '../types'
 import { formatDate } from '../utils/storage'
 
 interface Props {
   session: WorkoutSession
   onDelete: (id: string) => void
+  allTemplates: WorkoutTemplate[]
 }
 
-export const SessionCard = ({ session, onDelete }: Props) => {
+export const SessionCard = ({ session, onDelete, allTemplates }: Props) => {
   const [expanded, setExpanded] = useState(false)
   const [confirming, setConfirming] = useState(false)
 
-  const meta = WORKOUT_META[session.type]
+  const template = allTemplates.find((t) => t.name === session.type)
+  const icon = template?.icon ?? '💪'
+  const color = template?.color
+
   const exerciseCount = session.exercises.length
   const doneCount = session.exercises.filter((e) => e.completed).length
 
@@ -27,13 +30,18 @@ export const SessionCard = ({ session, onDelete }: Props) => {
 
   return (
     <div className="card overflow-hidden">
+      {/* Category color strip */}
+      {color && (
+        <div className="h-0.5 w-full" style={{ backgroundColor: color }} />
+      )}
+
       {/* Header row — always visible */}
       <button
         type="button"
         className="w-full p-4 flex items-center gap-3 text-left"
         onClick={() => setExpanded((p) => !p)}
       >
-        <span className="text-2xl leading-none shrink-0">{meta.icon}</span>
+        <span className="text-2xl leading-none shrink-0">{icon}</span>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -79,10 +87,7 @@ export const SessionCard = ({ session, onDelete }: Props) => {
           {session.exercises.length > 0 && (
             <div className="space-y-1.5">
               {session.exercises.map((ex) => (
-                <div
-                  key={ex.id}
-                  className="flex items-center gap-2 py-1"
-                >
+                <div key={ex.id} className="flex items-center gap-2 py-1">
                   <span
                     className={`w-4 h-4 rounded-full border shrink-0 flex items-center justify-center ${
                       ex.completed ? 'bg-gold border-gold text-obs' : 'border-obs-5'

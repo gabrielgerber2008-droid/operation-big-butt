@@ -1,15 +1,26 @@
 import { useState, useCallback } from 'react'
-import type { WorkoutSession } from '../types'
+import type { WorkoutSession, WorkoutTemplate } from '../types'
 import {
   loadSessions,
   addSession,
   updateSession,
   deleteSession,
+  loadCustomTemplates,
+  addCustomTemplate,
+  updateCustomTemplate,
+  deleteCustomTemplate,
 } from '../utils/storage'
+import { BUILT_IN_TEMPLATES } from '../data/workouts'
 
-/** Central hook — keeps sessions in React state and syncs to localStorage */
 export const useWorkoutLog = () => {
   const [sessions, setSessions] = useState<WorkoutSession[]>(() => loadSessions())
+  const [customTemplates, setCustomTemplates] = useState<WorkoutTemplate[]>(() =>
+    loadCustomTemplates(),
+  )
+
+  const allTemplates: WorkoutTemplate[] = [...BUILT_IN_TEMPLATES, ...customTemplates]
+
+  // ─── Session CRUD ──────────────────────────────────────────────────────────
 
   const saveNew = useCallback((session: WorkoutSession) => {
     addSession(session)
@@ -26,5 +37,32 @@ export const useWorkoutLog = () => {
     setSessions((prev) => prev.filter((s) => s.id !== id))
   }, [])
 
-  return { sessions, saveNew, save, remove }
+  // ─── Template CRUD ─────────────────────────────────────────────────────────
+
+  const saveTemplate = useCallback((template: WorkoutTemplate) => {
+    addCustomTemplate(template)
+    setCustomTemplates(loadCustomTemplates())
+  }, [])
+
+  const editTemplate = useCallback((template: WorkoutTemplate) => {
+    updateCustomTemplate(template)
+    setCustomTemplates(loadCustomTemplates())
+  }, [])
+
+  const removeTemplate = useCallback((id: string) => {
+    deleteCustomTemplate(id)
+    setCustomTemplates((prev) => prev.filter((t) => t.id !== id))
+  }, [])
+
+  return {
+    sessions,
+    saveNew,
+    save,
+    remove,
+    allTemplates,
+    customTemplates,
+    saveTemplate,
+    editTemplate,
+    removeTemplate,
+  }
 }

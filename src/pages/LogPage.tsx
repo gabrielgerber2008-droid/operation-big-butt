@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import confetti from 'canvas-confetti'
-import type { WorkoutSession, ExerciseLog, SoftballFields } from '../types'
-import { SLUG_TO_TYPE } from '../types'
-import { getDefaultExercises, WORKOUT_META } from '../data/workouts'
+import type { WorkoutSession, ExerciseLog, SoftballFields, WorkoutTemplate } from '../types'
+import { getTemplateById, getDefaultExercises } from '../data/workouts'
 import { ExerciseRow } from '../components/ExerciseRow'
 import { todayISO } from '../utils/storage'
 
 interface Props {
   onSave: (session: WorkoutSession) => void
+  allTemplates: WorkoutTemplate[]
 }
 
 const celebrate = () => {
@@ -16,17 +16,17 @@ const celebrate = () => {
   setTimeout(() => confetti({ particleCount: 60, spread: 90, origin: { y: 0.55 }, colors: ['#e8cc5a', '#CFB53B'] }), 300)
 }
 
-export const LogPage = ({ onSave }: Props) => {
+export const LogPage = ({ onSave, allTemplates }: Props) => {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
 
-  const workoutType = slug ? SLUG_TO_TYPE[slug] : undefined
-  const meta = workoutType ? WORKOUT_META[workoutType] : null
+  const template = slug ? getTemplateById(slug, allTemplates) : undefined
+  const isSoftball = template?.category === 'softball'
 
   const [date, setDate] = useState(todayISO())
   const [notes, setNotes] = useState('')
   const [exercises, setExercises] = useState<ExerciseLog[]>(() =>
-    workoutType ? getDefaultExercises(workoutType) : [],
+    slug ? getDefaultExercises(slug, allTemplates) : [],
   )
   const [softball, setSoftball] = useState<Partial<SoftballFields>>({
     attended: false,
@@ -46,9 +46,8 @@ export const LogPage = ({ onSave }: Props) => {
 
   const completedCount = exercises.filter((e) => e.completed).length
   const totalCount = exercises.length
-  const isSoftball = meta?.category === 'softball'
 
-  if (!workoutType || !meta) {
+  if (!template) {
     return (
       <div className="max-w-lg mx-auto px-4 pt-16 text-center">
         <p className="text-white/40">Unknown workout type.</p>
@@ -63,7 +62,7 @@ export const LogPage = ({ onSave }: Props) => {
     const session: WorkoutSession = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       date,
-      type: workoutType,
+      type: template.name,
       exercises,
       notes,
       completed: markCompleted,
@@ -106,10 +105,10 @@ export const LogPage = ({ onSave }: Props) => {
         </button>
 
         <div className="flex items-center gap-3">
-          <span className="text-4xl leading-none">{meta.icon}</span>
+          <span className="text-4xl leading-none">{template.icon}</span>
           <div>
-            <h1 className="text-2xl font-black text-white leading-tight">{workoutType}</h1>
-            <p className="text-sm text-white/35 mt-0.5">{meta.description}</p>
+            <h1 className="text-2xl font-black text-white leading-tight">{template.name}</h1>
+            <p className="text-sm text-white/35 mt-0.5">{template.description}</p>
           </div>
         </div>
       </div>
@@ -143,7 +142,6 @@ export const LogPage = ({ onSave }: Props) => {
               )}
             </div>
 
-            {/* Progress bar */}
             {totalCount > 0 && (
               <div className="w-full bg-obs-4 rounded-full h-1 mb-4">
                 <div
@@ -151,6 +149,10 @@ export const LogPage = ({ onSave }: Props) => {
                   style={{ width: `${(completedCount / totalCount) * 100}%` }}
                 />
               </div>
+            )}
+
+            {totalCount === 0 && (
+              <p className="text-white/30 text-sm text-center py-4">No exercises defined for this workout.</p>
             )}
 
             <div className="space-y-2">
@@ -165,29 +167,27 @@ export const LogPage = ({ onSave }: Props) => {
       {/* === SOFTBALL SECTION === */}
       {isSoftball && (
         <div className="space-y-5 mb-6">
-          {/* Attended / Played toggle */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-white/30 mb-3">
-              {workoutType === 'Softball Practice' ? 'Attended Practice' : 'Played Game'}
+              {template.name === 'Softball Practice' ? 'Attended Practice' : 'Played Game'}
             </label>
             <Toggle
               checked={
-                workoutType === 'Softball Practice'
+                template.name === 'Softball Practice'
                   ? softball.attended ?? false
                   : softball.played ?? false
               }
               onChange={(v) =>
                 setSoftball((p) =>
-                  workoutType === 'Softball Practice'
+                  template.name === 'Softball Practice'
                     ? { ...p, attended: v }
                     : { ...p, played: v },
                 )
               }
-              label={workoutType === 'Softball Practice' ? 'Yes, I was there' : 'Yes, I played'}
+              label={template.name === 'Softball Practice' ? 'Yes, I was there' : 'Yes, I played'}
             />
           </div>
 
-          {/* Duration */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-white/30 mb-2">
               Duration
@@ -201,7 +201,6 @@ export const LogPage = ({ onSave }: Props) => {
             />
           </div>
 
-          {/* Intensity */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-white/30 mb-2">
               Intensity — <span className="text-gold">{softball.intensity ?? 5}/10</span>
@@ -222,8 +221,7 @@ export const LogPage = ({ onSave }: Props) => {
             </div>
           </div>
 
-          {/* Softball-specific focus fields */}
-          {workoutType === 'Softball Practice' && (
+          {template.name === 'Softball Practice' && (
             <>
               <TextInput
                 label="Hitting Focus"
@@ -246,7 +244,7 @@ export const LogPage = ({ onSave }: Props) => {
             </>
           )}
 
-          {workoutType === 'Softball Game' && (
+          {template.name === 'Softball Game' && (
             <TextInput
               label="Performance Notes"
               placeholder="Hits, plays, how you felt..."
